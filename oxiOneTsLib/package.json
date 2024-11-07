@@ -1,0 +1,34 @@
+{
+  "name": "oxione",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsc && node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wylie39/oxi-one-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wylie39/oxi-one-web/issues"
+  },
+  "homepage": "https://github.com/wylie39/oxi-one-web#readme",
+  "devDependencies": {
+    "@types/lodash": "^4.17.13",
+    "@types/node": "^22.9.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.6.3",
+    "webpack": "^5.96.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.1.0"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "webmidi": "^3.1.11"
+  }
+}
