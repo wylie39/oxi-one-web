@@ -1,8 +1,8 @@
 {
-  "name": "oxione",
+  "name": "oxionetslib",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsc && node dist/index.js"
@@ -11,6 +11,9 @@
     "type": "git",
     "url": "git+https://github.com/wylie39/oxi-one-web.git"
   },
+  "files": [
+    "lib/**/*"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -22,10 +25,7 @@
     "@types/lodash": "^4.17.13",
     "@types/node": "^22.9.0",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.6.3",
-    "webpack": "^5.96.1",
-    "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.1.0"
+    "typescript": "^5.6.3"
   },
   "dependencies": {
     "lodash": "^4.17.21",

@@ -17,20 +17,33 @@ export class midiWorker {
 
     public async init() {
         try {
+            console.log('Trying to start MIDI worker');
             this.webMidi = await WebMidi.enable({sysex: true})
-            this.midiOutput = WebMidi.getOutputByName(this.deviceName);
-            this.midiInput = WebMidi.getInputByName(this.deviceName);
+            this.findOxi()
             this.midiInput.addListener("midimessage",this.onMidiReceive.bind(this))
-            console.log("midi worker started");
+            console.log("MIDI worker started");
             this.GetFwVersion()
             await this.midiPromise
         } catch (error) {
-            console.log(error);
+            console.log("Error: ", error);
         }
     }
 
 
-    GetFwVersion() {
+    private findOxi() {
+      const inputs = this.webMidi.inputs.filter((x) => x.manufacturer === "OXI Instruments" && x.name.includes("Port 1"))
+      const outputs = this.webMidi.outputs.filter((x) => x.manufacturer === "OXI Instruments" && x.name.includes("Port 1"))
+      if (inputs.length === 1 && outputs.length === 1) {
+        console.log("Found OXI One");
+        this.midiOutput = WebMidi.getOutputById(outputs[0].id)
+        this.midiInput = WebMidi.getInputById(inputs[0].id);
+      } else{
+        throw "OXI One not found"
+      }
+    }
+
+
+    private GetFwVersion() {
         this.sendCmd(OXI_SYSEX_CAT.MSG_CAT_SYSTEM,OXI_SYSEX_SYSTEM.MSG_SYSTEM_SW_VERSION)
     }
 
@@ -47,36 +60,34 @@ export class midiWorker {
         data.push(0)
         data.push(0xF7)
 
-        this.midiPromise = new Promise((resolve, reject) => { 
+        this.midiPromise = new Promise((resolve, reject) => {
             this.midiPromiseResolve = resolve
         })
-        this.midiOutput.send(data)        
+        this.midiOutput.send(data)
         await this.midiPromise
     }
 
-     
 
     public setState(state:WorkerState_e){
         this.state_ = state
     }
 
-    private sendCmd(cat:OXI_SYSEX_CAT,id:number){      
+    private sendCmd(cat:OXI_SYSEX_CAT,id:number){
         let data: number[] = []
         data = data.concat(this.SYSEX_HEADER)
         data.push(cat)
         data.push(id)
         data.push(0xF7)
 
-        this.midiPromise = new Promise((resolve, reject) => { 
+        this.midiPromise = new Promise((resolve, reject) => {
             this.midiPromiseResolve = resolve
         })
         this.midiOutput.send(data)
     }
 
-    private onMidiReceive(event: MessageEvent){        
-        console.log(event.rawData);
-        if (event.message.type === 'sysex') {                        
-            if (_.isEqual(event.rawData.slice(0,6),this.SYSEX_HEADER)) {                
+    private onMidiReceive(event: MessageEvent){
+        if (event.message.type === 'sysex') {
+            if (_.isEqual(event.rawData.slice(0,6),this.SYSEX_HEADER)) {
                 switch (event.rawData[6]) {
                     case OXI_SYSEX_CAT.MSG_CAT_SYSTEM:
                         switch (event.rawData[7]) {
@@ -87,15 +98,15 @@ export class midiWorker {
                                 for (let varIndex = 0; varIndex < buffer.length; ++varIndex) {
                                     const c = String.fromCharCode(buffer[varIndex]);
                                     if (c === ' ' || c === '\0') {
-                                        version += '\0'; 
+                                        version += '\0';
                                         break;
                                     } else {
-                                        version += c; 
+                                        version += c;
                                     }
-                                }                                
+                                }
                                 this.fwVersion = version
                                 break;
-                        
+
                             default:
                                 break;
                         }
@@ -103,19 +114,19 @@ export class midiWorker {
                     case OXI_SYSEX_CAT.MSG_CAT_PROJECT:
                         switch (event.rawData[7]) {
                             case OXI_SYSEX_PROJECT.MSG_PROJECT_SEND_PROJ_HEADER:
-                                console.log(event.message); 
+                                console.log(event.rawData);
                                 break;
                             default:
-                                console.log(event.message);
+                                console.log(event.rawData);
                                 break;
                         }
                         break
                     default:
-                        console.log(event.message);
+                        //console.log(event.message);
                         break;
                 }
             }
-        } 
+        }
         this.midiPromiseResolve(true)
     }
 }
