@@ -31,9 +31,9 @@ export class midiWorker {
 
 
     private findOxi() {
-      const inputs = this.webMidi.inputs.filter((x) => x.manufacturer === "OXI Instruments" && x.name.includes("Port 1"))
-      const outputs = this.webMidi.outputs.filter((x) => x.manufacturer === "OXI Instruments" && x.name.includes("Port 1"))
-      if (inputs.length === 1 && outputs.length === 1) {
+      const inputs = this.webMidi.inputs.filter((x) => x.name.includes("ONE"))
+      const outputs = this.webMidi.outputs.filter((x) => x.name.includes("ONE"))
+      if (inputs.length && outputs.length) {
         console.log("Found OXI One");
         this.midiOutput = WebMidi.getOutputById(outputs[0].id)
         this.midiInput = WebMidi.getInputById(inputs[0].id);
