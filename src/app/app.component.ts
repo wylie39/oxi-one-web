@@ -14,13 +14,13 @@ export class AppComponent implements OnInit {
   worker: midiWorker
 
   ngOnInit(): void {
-      
+
   }
 
   connect() {
       this.worker = new midiWorker()
-      this.worker.init().then(()=>{        
-          if (this.worker.getState() === WorkerState_e.WORKER_IDLE) {        
+      this.worker.init().then(()=>{
+          if (this.worker.getState() === WorkerState_e.WORKER_IDLE) {
             this.fwVersion = this.worker.fwVersion
             this.isConected = true
             this.error = ""
@@ -31,12 +31,12 @@ export class AppComponent implements OnInit {
   }
 
   getProject(){
-    this.worker.getProject(0)
+    this.worker.saveProject(1)
   }
 
   disconect() {
-    this.worker.close().then(() => {            
-      if (this.worker.getState() === WorkerState_e.WORKER_DISCONECTED) {                
+    this.worker.close().then(() => {
+      if (this.worker.getState() === WorkerState_e.WORKER_DISCONECTED) {
         this.fwVersion = ""
         this.isConected = false
       }

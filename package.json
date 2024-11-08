@@ -18,10 +18,13 @@
     "@angular/platform-browser": "^14.0.0",
     "@angular/platform-browser-dynamic": "^14.0.0",
     "@angular/router": "^14.0.0",
+    "@types/file-saver": "^2.0.7",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
+    "oxionetslib": "./oxiOneTsLib",
     "rxjs": "~7.5.0",
     "tslib": "^2.3.0",
-    "zone.js": "~0.11.4",
-    "oxionetslib": "./oxiOneTsLib"
+    "zone.js": "~0.11.4"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^14.0.0",

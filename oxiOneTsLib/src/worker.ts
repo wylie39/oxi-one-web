@@ -2,6 +2,9 @@ import { Input, MessageEvent, Output, WebMidi } from "webmidi";
 import { OXI_SYSEX_CAT, OXI_SYSEX_PROJECT, OXI_SYSEX_SYSTEM } from "./OXI_SYSEX_MSG";
 import { deNibblize } from "./nibble";
 import _ from "lodash";
+import { saveAs } from 'file-saver';
+import JSzip from 'jszip'
+
 
 export class midiWorker {
     private state_: WorkerState_e = WorkerState_e.WORKER_IDLE
@@ -12,7 +15,7 @@ export class midiWorker {
     private webMidi: any
     public fwVersion: string
     private midiPromiseResolve: (value: unknown) => void
-    private midiPromise: Promise<unknown>
+    private midiPromise: Promise<number[]>
     constructor() {}
 
     public async init() {
@@ -40,7 +43,7 @@ export class midiWorker {
 
     private findOxi() {
       const inputs = this.webMidi.inputs.filter((x) => x.name.includes("ONE"))
-      const outputs = this.webMidi.outputs.filter((x) => x.name.includes("ONE"))      
+      const outputs = this.webMidi.outputs.filter((x) => x.name.includes("ONE"))
       if (inputs.length && outputs.length) {
         console.log("Found OXI One");
         this.midiOutput = WebMidi.getOutputById(outputs[0].id)
@@ -59,22 +62,72 @@ export class midiWorker {
         return this.state_
     }
 
-    public async getProject(index:number) {
-        let data: number[] = []
-        data = data.concat(this.SYSEX_HEADER)
-        data.push(OXI_SYSEX_CAT.MSG_CAT_PROJECT)
-        data.push(OXI_SYSEX_PROJECT.MSG_PROJECT_GET_PROJ_HEADER)
-        data.push(index)
-        data.push(0)
-        data.push(0xF7)
+    public async saveProject(project_index:number) {
+      const zip = new JSzip();
+      const projectFolder = zip.folder("Project " + project_index);
+      projectFolder.file('Project ' + project_index + '.oxipro', await this.getProjectHeader(project_index)) //get ProjectHeader
 
-        this.midiPromise = new Promise((resolve, reject) => {
-            this.midiPromiseResolve = resolve
-        })
-        this.midiOutput.send(data)
-        this.midiPromise.then((x) => {
-            console.log(x);  
-        })
+
+      // 64 patterns in total
+      for (let  pattern_index = 0;  pattern_index < 64;  pattern_index++) {
+        projectFolder.file('Pattern ' + (pattern_index + 1) + '.oxipat', await this.GetPattern(pattern_index, project_index))
+      }
+
+      zip.generateAsync({type:"blob"}).then(function(content) {
+        saveAs(content, "Project " + project_index + ".zip");
+      });
+    }
+
+    private async getProjectHeader(index:number) {
+      let data: number[] = []
+      data = data.concat(this.SYSEX_HEADER)
+      data.push(OXI_SYSEX_CAT.MSG_CAT_PROJECT)
+      data.push(OXI_SYSEX_PROJECT.MSG_PROJECT_GET_PROJ_HEADER)
+      data.push(index - 1)
+      data.push(0)
+      data.push(0xF7)
+
+      this.midiPromise = new Promise((resolve, reject) => {
+          this.midiPromiseResolve = resolve
+      })
+      this.midiOutput.send(data)
+      return this.ProcessProjectHeader(await this.midiPromise)
+    }
+
+    private async GetPattern(pattern_idx:number, project_index:number) {
+      let data: number[] = []
+      data = data.concat(this.SYSEX_HEADER)
+      data.push(OXI_SYSEX_CAT.MSG_CAT_PROJECT)
+      data.push(OXI_SYSEX_PROJECT.MSG_PROJECT_GET_PATTERN)
+      data.push(project_index - 1)
+      data.push(0 * 16 + pattern_idx)
+      data.push(0xF7)
+
+      this.midiPromise = new Promise((resolve, reject) => {
+          this.midiPromiseResolve = resolve
+      })
+      this.midiOutput.send(data)
+      return this.ProcessPattern(await this.midiPromise)
+    }
+
+    private ProcessProjectHeader(data:number[]){
+      let buffer = []
+      deNibblize(buffer,data,10)
+      let ia = new Uint8Array(buffer)
+      const file = new Blob([ia],{
+        type: "application/octet-stream"
+      })
+      return file
+    }
+
+    private ProcessPattern(data:number[]){
+      let buffer = []
+      deNibblize(buffer,data,10)
+      let ia = new Uint8Array(buffer)
+      const file = new Blob([ia],{
+        type: "application/octet-stream"
+      })
+      return file
     }
 
 
@@ -115,7 +168,7 @@ export class midiWorker {
                                     }
                                 }
                                 this.fwVersion = version
-                                this.midiPromiseResolve(true)
+                                this.midiPromiseResolve(event.rawData)
                                 break;
 
                             default:
@@ -125,6 +178,9 @@ export class midiWorker {
                     case OXI_SYSEX_CAT.MSG_CAT_PROJECT:
                         switch (event.rawData[7]) {
                             case OXI_SYSEX_PROJECT.MSG_PROJECT_SEND_PROJ_HEADER:
+                                this.midiPromiseResolve(event.rawData)
+                                break;
+                            case OXI_SYSEX_PROJECT.MSG_PROJECT_SEND_PATTERN:
                                 this.midiPromiseResolve(event.rawData)
                                 break;
                             default:
