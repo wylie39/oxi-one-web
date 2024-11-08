@@ -1,1 +1,7 @@
-<h1>test</h1>
+<h1>FW: {{fwVersion}}</h1>
+<button *ngIf="!isConected" (click)="connect()">Connect</button>
+<button *ngIf="isConected" (click)="disconect()">Disconect</button>
+<br />
+<button *ngIf="isConected" (click)="getProject()">Get Project</button>
+<h3>{{error}}</h3>
+

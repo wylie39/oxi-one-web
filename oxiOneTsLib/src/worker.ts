@@ -24,15 +24,23 @@ export class midiWorker {
             console.log("MIDI worker started");
             this.GetFwVersion()
             await this.midiPromise
+            this.state_ = WorkerState_e.WORKER_IDLE
         } catch (error) {
-            console.log("Error: ", error);
+            this.close()
+            throw error
         }
+    }
+
+    public async close() {
+        console.log("Closing MIDI");
+        this.webMidi.disable()
+        this.state_ = WorkerState_e.WORKER_DISCONECTED
     }
 
 
     private findOxi() {
       const inputs = this.webMidi.inputs.filter((x) => x.name.includes("ONE"))
-      const outputs = this.webMidi.outputs.filter((x) => x.name.includes("ONE"))
+      const outputs = this.webMidi.outputs.filter((x) => x.name.includes("ONE"))      
       if (inputs.length && outputs.length) {
         console.log("Found OXI One");
         this.midiOutput = WebMidi.getOutputById(outputs[0].id)
@@ -64,7 +72,9 @@ export class midiWorker {
             this.midiPromiseResolve = resolve
         })
         this.midiOutput.send(data)
-        await this.midiPromise
+        this.midiPromise.then((x) => {
+            console.log(x);  
+        })
     }
 
 
@@ -105,6 +115,7 @@ export class midiWorker {
                                     }
                                 }
                                 this.fwVersion = version
+                                this.midiPromiseResolve(true)
                                 break;
 
                             default:
@@ -114,10 +125,9 @@ export class midiWorker {
                     case OXI_SYSEX_CAT.MSG_CAT_PROJECT:
                         switch (event.rawData[7]) {
                             case OXI_SYSEX_PROJECT.MSG_PROJECT_SEND_PROJ_HEADER:
-                                console.log(event.rawData);
+                                this.midiPromiseResolve(event.rawData)
                                 break;
                             default:
-                                console.log(event.rawData);
                                 break;
                         }
                         break
@@ -127,17 +137,16 @@ export class midiWorker {
                 }
             }
         }
-        this.midiPromiseResolve(true)
     }
 }
 
 
 
 
-enum WorkerState_e {
+export enum WorkerState_e {
+    WORKER_DISCONECTED,
     WORKER_IDLE,
     WORKER_CANCELLING,
-    // launch thread
     WORKER_FW_UPDATE_OXI_ONE,
     WORKER_FW_UPDATE_BLE,
     WORKER_FW_UPDATE_SPLIT,
