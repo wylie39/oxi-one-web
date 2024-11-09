@@ -1,7 +1,38 @@
-<h1>FW: {{fwVersion}}</h1>
-<button *ngIf="!isConected" (click)="connect()">Connect</button>
-<button *ngIf="isConected" (click)="disconect()">Disconect</button>
-<br />
-<button *ngIf="isConected" (click)="getProject()">Get Project</button>
-<h3>{{error}}</h3>
+<div class="oxi-one-container">
+  <h1>OXI ONE Web Tool</h1>
+  <div class="info">
+    <p>
+      This is a simple web app to send and receive projects form the
+      <a href="https://oxiinstruments.com/oxi-one/">OXI ONE</a>.
+    </p>
+    <P>Plug in your OXI ONE and press connect.</P>
+  </div>
 
+  <h3 *ngIf="!isMidiSupported()">No WebMIDI support found</h3>
+  <p *ngIf="!isMidiSupported()">
+    See compatibility
+    <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_MIDI_API#browser_compatibility">Here</a>
+  </p>
+
+  <div *ngIf="isConnected" class="project-controls">
+    <label for="project-number">Select project to get or replace:</label>
+    <select id="project-number" [(ngModel)]="selectedProject">
+      <option *ngFor="let project of projects" [value]="project">Project {{ project }}</option>
+    </select>
+  </div>
+
+  <input *ngIf="isConnected" type="file" accept=".zip" class="file-picker" (change)="onUpload($event)" />
+
+  <div *ngIf="isConnected" class="project-buttons">
+    <button (click)="getProject()">Get Project</button>
+    <button [disabled]="!file?.length" (click)="sendProject()">Send Project</button>
+  </div>
+
+  <div class="connection-buttons">
+    <button class="connection-button" *ngIf="!isConnected && isMidiSupported()" (click)="connect()">Connect</button>
+    <button class="disconnect-button" *ngIf="isConnected" (click)="disconnect()">Disconnect</button>
+  </div>
+
+  <p *ngIf="fwVersion" class="status-message">FW: {{ fwVersion }}</p>
+  <p *ngIf="error" class="error-message">{{ error }}</p>
+</div>
