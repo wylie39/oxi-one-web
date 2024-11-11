@@ -13,8 +13,9 @@ export class AppComponent implements OnInit {
   error = '';
   worker: midiWorker;
   file: FileList;
+  fileName = ""
   selectedProject = 1; // Default project
-  projects = Array.from({ length: 15 }, (_, i) => i + 1); // Generates an array [1, 2, ..., 15]
+  projects = []
 
   ngOnInit(): void {}
 
@@ -29,6 +30,7 @@ export class AppComponent implements OnInit {
       .then(() => {
         if (this.worker.getState() === WorkerState_e.WORKER_IDLE) {
           this.fwVersion = this.worker.fwVersion;
+          this.projects = this.worker.projects;
           this.isConnected = true;
           this.error = '';
         }
@@ -50,10 +52,17 @@ export class AppComponent implements OnInit {
 
   onUpload(event) {
     this.file = event.target.files;
+    this.worker.getProjectName(this.file[0]).then((name) =>{
+      this.fileName = name
+    })
   }
 
   sendProject() {
-    this.worker.sendProject(this.selectedProject, this.file[0]).catch(e => {
+    this.worker.sendProject(this.selectedProject, this.file[0]).then(() => {
+      this.projects = this.worker.projects
+      console.log(this.projects);
+      
+    }).catch(e => {
       this.error = e;
     });
   }

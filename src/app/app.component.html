@@ -17,7 +17,7 @@
   <div *ngIf="isConnected" class="project-controls">
     <label for="project-number">Select project to get or replace:</label>
     <select id="project-number" [(ngModel)]="selectedProject">
-      <option *ngFor="let project of projects" [value]="project">Project {{ project }}</option>
+      <option *ngFor="let project of projects" [value]="project?.id">{{ project?.name }}</option>
     </select>
   </div>
 
@@ -25,7 +25,7 @@
 
   <div *ngIf="isConnected" class="project-buttons">
     <button (click)="getProject()">Get Project</button>
-    <button [disabled]="!file?.length" (click)="sendProject()">Send Project</button>
+    <button [disabled]="!file?.length" (click)="sendProject()">Send Project {{fileName}}</button>
   </div>
 
   <div class="connection-buttons">
