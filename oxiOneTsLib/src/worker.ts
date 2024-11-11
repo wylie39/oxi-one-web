@@ -27,14 +27,13 @@ export class midiWorker {
       console.log('MIDI worker started');
       this.GetFwVersion();
       await this.midiPromise;
-      await this.listProjects()
+      await this.listProjects();
       this.state_ = WorkerState_e.WORKER_IDLE;
     } catch (error) {
       this.close();
       throw error;
     }
   }
-  
 
   public async close() {
     console.log('Closing MIDI');
@@ -93,22 +92,36 @@ export class midiWorker {
     return this.ProcessProjectHeader(await this.midiPromise);
   }
 
+  public async deleteProject(project_index: number) {
+    let data: number[] = [];
+    data = data.concat(this.SYSEX_HEADER);
+    data.push(OXI_SYSEX_CAT.MSG_CAT_PROJECT);
+    data.push(OXI_SYSEX_PROJECT.MSG_PROJECT_DELETE_PROJECT);
+    data.push(project_index - 1);
+    data.push(0);
+    data.push(0xf7);
+
+    this.midiOutput.send(data);
+    await this.listProjects();
+  }
+
   //Start of list projects
   public async listProjects() {
     const projects = [];
     for (let project_index = 1; project_index < 16; project_index++) {
-      const header = await this.getProjectHeader(project_index)
+      const header = await this.getProjectHeader(project_index);
       if (header[0] === 112) {
-        projects.push({id:project_index,name:`Project ${project_index} (Empty)`})
+        projects.push({ id: project_index, name: `Project ${project_index} (Empty)` });
       } else {
-        const name = new TextDecoder().decode(header.slice(4,16).filter(x => x > 0))
+        const name = new TextDecoder().decode(header.slice(4, 16).filter(x => x > 0));
         projects.push({
-          id:project_index,name:`Project ${project_index} (${name})`
-        })
+          id: project_index,
+          name: `Project ${project_index} (${name})`,
+        });
       }
     }
-    this.projects = projects
-    return projects
+    this.projects = projects;
+    return projects;
   }
 
   private async GetPattern(pattern_idx: number, project_index: number) {
@@ -141,35 +154,34 @@ export class midiWorker {
     return ia;
   }
 
-  public async getProjectName(file:File) {
+  public async getProjectName(file: File) {
     if (!file) {
-      return ""
+      return '';
     }
     const files = (await JSZip.loadAsync(file)).files;
     const projectHeaderRaw = await files[Object.keys(files).filter(x => x.includes('.oxipro'))[0]].async('array');
-    const projectHeader = new Uint8Array(projectHeaderRaw)
-    const name = new TextDecoder().decode(projectHeader.slice(4,16).filter(x => x > 0))
-    return name
-     
+    const projectHeader = new Uint8Array(projectHeaderRaw);
+    const name = new TextDecoder().decode(projectHeader.slice(4, 16).filter(x => x > 0));
+    return name;
   }
 
   public async sendProject(project_index: number, file: File) {
-    const files = (await JSZip.loadAsync(file)).files;    
+    const files = (await JSZip.loadAsync(file)).files;
     const projectHeader = await files[Object.keys(files).filter(x => x.includes('.oxipro'))[0]].async('array');
     let data = this.setProjectHeader(project_index);
     nibblize(data, projectHeader, projectHeader.length);
-    data.push(0xf7); 
+    data.push(0xf7);
     console.log(data);
     this.midiPromise = new Promise((resolve, reject) => {
       this.midiPromiseResolve = resolve;
     });
     this.midiOutput.send(data);
-    await this.midiPromise
+    await this.midiPromise;
     // 64 patterns in total
     for (let pattern_index = 0; pattern_index < 64; pattern_index++) {
       data = this.SetPatternHeader(project_index, pattern_index);
-      const pattern = await files[Object.keys(files).filter(x => x.includes('Pattern ' + (pattern_index + 1) + '.oxipat'))[0]].async('array');      
-      nibblize(data, pattern, pattern.length);      
+      const pattern = await files[Object.keys(files).filter(x => x.includes('Pattern ' + (pattern_index + 1) + '.oxipat'))[0]].async('array');
+      nibblize(data, pattern, pattern.length);
       data.push(0xf7);
       this.midiPromise = new Promise((resolve, reject) => {
         this.midiPromiseResolve = resolve;
@@ -177,7 +189,7 @@ export class midiWorker {
       this.midiOutput.send(data);
       await this.midiPromise;
     }
-    await this.midiPromise
+    await this.midiPromise;
     await this.listProjects();
   }
 
@@ -251,14 +263,17 @@ export class midiWorker {
                 this.midiPromiseResolve(event.rawData);
                 break;
               case OXI_SYSEX_PROJECT.MSG_PROJECT_SEND_PATTERN:
-                this.midiPromiseResolve(event.rawData);                
+                this.midiPromiseResolve(event.rawData);
+                break;
+              case OXI_SYSEX_PROJECT.MSG_PROJECT_DELETE_PROJECT:
+                this.midiPromiseResolve(event.rawData);
                 break;
               case OXI_SYSEX_PROJECT.MSG_PROJECT_ACK:
-                console.log("Got ACK");
+                console.log('Got ACK');
                 this.midiPromiseResolve(event.rawData);
                 break;
               case OXI_SYSEX_PROJECT.MSG_PROJECT_NACK:
-                console.log("Got NACK");
+                console.log('Got NACK');
                 this.midiPromiseResolve(event.rawData);
                 break;
               default:

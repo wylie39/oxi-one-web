@@ -1,5 +1,5 @@
 <div class="oxi-one-container">
-  <h1>OXI ONE Web Tool</h1>
+  <h1>Unofficial OXI ONE Web Tool</h1>
   <div class="info">
     <p>
       This is a simple web app to send and receive projects form the
@@ -25,7 +25,9 @@
 
   <div *ngIf="isConnected" class="project-buttons">
     <button (click)="getProject()">Get Project</button>
-    <button [disabled]="!file?.length" (click)="sendProject()">Send Project {{fileName}}</button>
+    <button [disabled]="!file?.length" (click)="sendProject()">Send Project {{ fileName }}</button>
+    <button (click)="deleteProject()">Delete Project</button>
+    <button (click)="getProjects()">Refresh List</button>
   </div>
 
   <div class="connection-buttons">
@@ -36,3 +38,9 @@
   <p *ngIf="fwVersion" class="status-message">FW: {{ fwVersion }}</p>
   <p *ngIf="error" class="error-message">{{ error }}</p>
 </div>
+<p class="footer-text">
+  This tool is in beta! There may be bugs, I am not responsible for any data loss or damage that may occur. Please report any bugs
+  <a href="https://github.com/wylie39/oxi-one-web/issues">here</a>.
+</p>
+
+<ngx-spinner bdColor="rgba(0, 0, 0, 0.8)" size="medium" color="#fff" type="timer"><p style="color: white">Loading...</p></ngx-spinner>

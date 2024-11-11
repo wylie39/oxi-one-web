@@ -102,3 +102,11 @@ p {
 .file-picker {
   margin-top: 10px;
 }
+
+.footer-text {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+}

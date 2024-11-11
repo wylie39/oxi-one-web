@@ -1,5 +1,6 @@
 import { Component, OnInit, Injectable } from '@angular/core';
 import { midiWorker, WorkerState_e } from 'oxiOneTsLib/src';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 @Component({
   selector: 'app-root',
@@ -13,9 +14,11 @@ export class AppComponent implements OnInit {
   error = '';
   worker: midiWorker;
   file: FileList;
-  fileName = ""
+  fileName = '';
   selectedProject = 1; // Default project
-  projects = []
+  projects = [];
+
+  constructor(private spinner: NgxSpinnerService) {}
 
   ngOnInit(): void {}
 
@@ -24,6 +27,7 @@ export class AppComponent implements OnInit {
   }
 
   connect() {
+    this.spinner.show();
     this.worker = new midiWorker();
     this.worker
       .init()
@@ -33,38 +37,64 @@ export class AppComponent implements OnInit {
           this.projects = this.worker.projects;
           this.isConnected = true;
           this.error = '';
+          this.spinner.hide();
         }
+      })
+      .catch(e => {
+        this.error = e;
+        this.spinner.hide();
+      });
+  }
+
+  getProject() {
+    this.spinner.show();
+    this.worker
+      .saveProject(this.selectedProject)
+      .then(() => {
+        this.spinner.hide();
       })
       .catch(e => {
         this.error = e;
       });
   }
 
-  getProject() {
-    this.worker.saveProject(this.selectedProject).catch(e => {
-      this.error = e;
-    });
+  deleteProject() {
+    this.worker
+      .deleteProject(this.selectedProject)
+      .then(() => {
+        this.projects = this.worker.projects;
+        console.log(this.projects);
+      })
+      .catch(e => {
+        this.error = e;
+      });
   }
 
   getProjects() {
-    this.worker.listProjects();
+    this.worker.listProjects().then(() => {
+      this.projects = this.worker.projects;
+      console.log(this.projects);
+    });
   }
 
   onUpload(event) {
     this.file = event.target.files;
-    this.worker.getProjectName(this.file[0]).then((name) =>{
-      this.fileName = name
-    })
+    this.worker.getProjectName(this.file[0]).then(name => {
+      this.fileName = name;
+    });
   }
 
   sendProject() {
-    this.worker.sendProject(this.selectedProject, this.file[0]).then(() => {
-      this.projects = this.worker.projects
-      console.log(this.projects);
-      
-    }).catch(e => {
-      this.error = e;
-    });
+    this.spinner.show();
+    this.worker
+      .sendProject(this.selectedProject, this.file[0])
+      .then(() => {
+        this.projects = this.worker.projects;
+        this.spinner.hide();
+      })
+      .catch(e => {
+        this.error = e;
+      });
   }
 
   disconnect() {
